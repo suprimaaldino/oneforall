@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+data/
+models/
+auth_info/
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+classifier_service/trained_model/
+admin-ui/dist/

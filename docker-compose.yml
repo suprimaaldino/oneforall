@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: dinobot-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./auth_info:/app/auth_info
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/dinobot.db
+      - LLM_SERVICE_URL=http://llm_service:8001
+      - CLASSIFIER_SERVICE_URL=http://classifier_service:8002
+      - BOT_NAME=DinoBot
+      - DEFAULT_TONE=auto-detect
+      - SAFETY_LEVEL=normal
+      - RATE_LIMIT_PER_MINUTE=20
+      - BACKEND_CORS_ORIGIN=http://localhost:5173
+    depends_on:
+      - llm_service
+      - classifier_service
+    restart: unless-stopped
+
+  llm_service:
+    build: ./llm_service
+    container_name: dinobot-llm
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./models:/models
+    environment:
+      - MODEL_PATH=/models/ggml-gpt4all-j-v1.3-groovy.bin
+      - LLM_MAX_TOKENS=256
+      - LLM_TEMPERATURE=0.7
+    restart: unless-stopped
+
+  classifier_service:
+    build: ./classifier_service
+    container_name: dinobot-classifier
+    ports:
+      - "8002:8002"
+    environment:
+      - CLASSIFIER_MODE=zero-shot
+    restart: unless-stopped
+
+  admin-ui:
+    build: ./admin-ui
+    container_name: dinobot-admin
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
