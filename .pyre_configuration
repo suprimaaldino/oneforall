@@ -11,6 +11,7 @@
   ],
   "site_package_search_strategy": "all",
   "site_roots": [
-    "C:/Users/aldino_s890/AppData/Local/Programs/Python/Python312/Lib/site-packages"
+    "classifier_service/.venv/Lib/site-packages",
+    "llm_service/.venv/Lib/site-packages"
   ]
 }
