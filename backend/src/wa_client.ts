@@ -7,6 +7,7 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import path from 'path';
+import qrcode from 'qrcode-terminal';
 
 const logger = pino({ level: 'warn' });
 
@@ -26,13 +27,18 @@ export async function startWhatsApp(onMessage: MessageHandler): Promise<void> {
   sock = makeWASocket({
     auth: state,
     logger,
-    printQRInTerminal: true,
     browser: ['DinoBot', 'Chrome', '1.0.0'],
   });
 
   // Handle connection updates (QR, reconnect, logout)
   sock.ev.on('connection.update', (update) => {
-    const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect, qr } = update;
+
+    // ── QR code received — render it in the terminal ──
+    if (qr) {
+      console.log('\n🔑 Scan this QR code with WhatsApp:\n');
+      qrcode.generate(qr, { small: true });
+    }
 
     if (connection === 'close') {
       const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
