@@ -1,0 +1,21 @@
+{
+  "executionEnvironments": [
+    {
+      "root": "llm_service",
+      "extraPaths": ["llm_service"]
+    },
+    {
+      "root": "classifier_service",
+      "extraPaths": ["classifier_service"]
+    },
+    {
+      "root": "tests/llm_service",
+      "extraPaths": [".", "llm_service"]
+    },
+    {
+      "root": "tests/classifier_service",
+      "extraPaths": [".", "classifier_service"]
+    }
+  ],
+  "reportMissingModuleSource": false
+}
