@@ -1,6 +1,7 @@
 import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason,
+  fetchLatestBaileysVersion,
   WASocket,
   proto,
 } from '@whiskeysockets/baileys';
@@ -24,9 +25,14 @@ export async function startWhatsApp(onMessage: MessageHandler): Promise<void> {
   const authDir = path.resolve(__dirname, '..', 'auth_info');
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
+  // Fetch the latest WA Web version to avoid 405 errors
+  const { version, isLatest } = await fetchLatestBaileysVersion();
+  console.log(`[WA] Using WA Web v${version.join('.')}${isLatest ? ' (latest)' : ' (cached)'}`);
+
   sock = makeWASocket({
     auth: state,
     logger,
+    version,
     browser: ['DinoBot', 'Chrome', '1.0.0'],
   });
 
