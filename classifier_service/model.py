@@ -7,7 +7,7 @@ Supports two modes:
 
 import os
 import json
-from typing import Optional
+from typing import Optional, Any
 
 # Supported tone labels
 TONE_LABELS = [
@@ -25,9 +25,9 @@ TONE_LABELS = [
 
 # ── Classifier state ────────────────────────────────────
 _classifier_mode: str = "zero-shot"  # 'zero-shot' or 'trained'
-_zero_shot_pipeline = None
-_trained_model = None
-_sentence_model = None
+_zero_shot_pipeline: Any = None
+_trained_model: Any = None
+_sentence_model: Any = None
 
 
 def load_classifier(mode: Optional[str] = None) -> None:
@@ -51,7 +51,7 @@ def _load_zero_shot() -> None:
     """Load HuggingFace zero-shot classification pipeline."""
     global _zero_shot_pipeline
     try:
-        from transformers import pipeline
+        from transformers import pipeline # type: ignore
         _zero_shot_pipeline = pipeline(
             "zero-shot-classification",
             model="facebook/bart-large-mnli",
@@ -68,8 +68,8 @@ def _load_trained() -> None:
     """Load trained sklearn model + sentence-transformers encoder."""
     global _trained_model, _sentence_model
     try:
-        import joblib
-        from sentence_transformers import SentenceTransformer
+        import joblib # type: ignore
+        from sentence_transformers import SentenceTransformer # type: ignore
 
         model_path = os.getenv("TRAINED_MODEL_PATH", "./trained_model/classifier.joblib")
         if os.path.exists(model_path):
@@ -100,6 +100,8 @@ def classify(text: str) -> dict:
 
 def _classify_zero_shot(text: str) -> dict:
     """Classify using HuggingFace zero-shot pipeline."""
+    if _zero_shot_pipeline is None:
+        return _classify_mock(text)
     try:
         result = _zero_shot_pipeline(
             text,
@@ -127,11 +129,13 @@ def _classify_zero_shot(text: str) -> dict:
 
 def _classify_trained(text: str) -> dict:
     """Classify using trained sklearn model."""
+    if _sentence_model is None or _trained_model is None:
+        return _classify_mock(text)
     try:
         embedding = _sentence_model.encode([text])
         prediction = _trained_model.predict(embedding)[0]
         probabilities = _trained_model.predict_proba(embedding)[0]
-        confidence = round(float(max(probabilities)), 3)
+        confidence = round(float(max(probabilities)), 3) # type: ignore
 
         return {
             "tone": prediction,

@@ -23,7 +23,7 @@ export interface GenerateResult {
  */
 export async function generate(payload: GenerateRequest): Promise<GenerateResult> {
   const systemPrompt = getSetting('system_prompt') ||
-    `You are ${config.botName}, a friendly WhatsApp assistant.`;
+    `Kamu adalah ${config.botName}, asisten pribadi WhatsApp yang ramah.`;
   const temperature = parseFloat(getSetting('temperature') || String(config.llmTemperature));
 
   // Build the full prompt string for the LLM service
@@ -54,12 +54,12 @@ export async function generate(payload: GenerateRequest): Promise<GenerateResult
   promptParts.push('');
   promptParts.push(`Current message from User: "${payload.message}"`);
   promptParts.push('');
-  promptParts.push(`INSTRUCTION:`);
-  promptParts.push(`1) Infer the tone from user message, but respect the tone_instruction override if not 'auto-detect'.`);
-  promptParts.push(`2) Produce a direct reply in the chosen tone.`);
-  promptParts.push(`3) Provide a short [ADMIN_NOTE] about why this reply suits the tone.`);
-  promptParts.push(`4) If the message requires human intervention, add [HUMAN_REVIEW].`);
-  promptParts.push(`5) Return JSON only: { "reply": "...", "tone": "...", "confidence": 0.0-1.0, "admin_note": "...", "flags": "" }`);
+  promptParts.push(`INSTRUKSI:`);
+  promptParts.push(`1) Tentukan nada dari pesan pengguna, tapi ikuti tone_instruction jika bukan 'auto-detect'.`);
+  promptParts.push(`2) Buat balasan langsung dengan nada yang dipilih, dalam Bahasa Indonesia.`);
+  promptParts.push(`3) Berikan [ADMIN_NOTE] singkat tentang mengapa balasan ini cocok dengan nada.`);
+  promptParts.push(`4) Jika pesan memerlukan intervensi manusia, tambahkan [HUMAN_REVIEW].`);
+  promptParts.push(`5) Kembalikan JSON saja: { "reply": "...", "tone": "...", "confidence": 0.0-1.0, "admin_note": "...", "flags": "" }`);
 
   const fullPrompt = promptParts.join('\n');
 
@@ -79,10 +79,10 @@ export async function generate(payload: GenerateRequest): Promise<GenerateResult
   } catch (error: any) {
     console.error('[LLM] Service error:', error.message);
     return {
-      reply: "Sorry, I'm having trouble thinking right now. Please try again in a moment! 🤖",
+      reply: 'Maaf, aku lagi ada gangguan. Coba lagi sebentar ya! 🤖',
       tone: 'neutral',
       confidence: 0.0,
-      admin_note: 'LLM service unavailable — sent fallback reply',
+      admin_note: 'LLM service tidak tersedia — mengirim balasan fallback',
       flags: 'LLM_ERROR',
     };
   }

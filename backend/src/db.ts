@@ -53,7 +53,7 @@ const defaultSettings: Array<{ key: string; value: string }> = [
   { key: 'bot_name', value: config.botName },
   { key: 'default_tone', value: config.defaultTone },
   { key: 'safety_level', value: config.safetyLevel },
-  { key: 'system_prompt', value: `You are ${config.botName}, a friendly WhatsApp assistant.` },
+  { key: 'system_prompt', value: `Kamu adalah ${config.botName}, asisten pribadi WhatsApp yang ramah.` },
   { key: 'temperature', value: String(config.llmTemperature) },
 ];
 

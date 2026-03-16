@@ -82,12 +82,12 @@ export async function processIncomingMessage(
   const command = text.trim().toUpperCase();
   if (command === 'STOP') {
     addDoNotReply(jid);
-    await sendWhatsApp(jid, '✅ Auto-replies disabled for you. Send START to re-enable.');
+    await sendWhatsApp(jid, '✅ Balasan otomatis dinonaktifkan untukmu. Kirim START untuk mengaktifkan kembali.');
     return;
   }
   if (command === 'START') {
     removeDoNotReply(jid);
-    await sendWhatsApp(jid, '🔔 Auto-replies re-enabled! Welcome back.');
+    await sendWhatsApp(jid, '🔔 Balasan otomatis diaktifkan kembali! Selamat datang kembali.');
     return;
   }
 
@@ -127,10 +127,10 @@ export async function processIncomingMessage(
   } catch (err) {
     console.error('[Router] LLM generation failed:', err);
     result = {
-      reply: "I'm having trouble right now — please try again shortly! 🤖",
+      reply: 'Aku lagi ada gangguan nih — coba lagi sebentar ya! 🤖',
       tone: 'neutral',
       confidence: 0,
-      admin_note: 'LLM error fallback',
+      admin_note: 'Fallback error LLM',
       flags: 'LLM_ERROR',
     };
   }
