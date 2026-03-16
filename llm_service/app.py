@@ -5,15 +5,28 @@ Provides POST /generate endpoint that uses gpt4all (or llama.cpp) to generate re
 
 import json
 import re
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from model_loader import load_model, generate_text
 from prompts import build_prompt
 
+
+# ── Lifespan ─────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load the model when the service starts."""
+    print("[LLM Service] 🚀 Starting up — loading model...")
+    load_model()
+    print("[LLM Service] ✅ Ready to generate responses!")
+    yield
+
+
 app = FastAPI(
     title="DinoBot LLM Service",
     description="AI response generation for WhatsApp bot",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 
@@ -121,15 +134,7 @@ def parse_llm_output(raw: str, default_tone: str = "neutral") -> dict:
     }
 
 
-# ── Startup ──────────────────────────────────────────────
-@app.on_event("startup")
-async def startup_event():
-    """Load the model when the service starts."""
-    print("[LLM Service] 🚀 Starting up — loading model...")
-    load_model()
-    print("[LLM Service] ✅ Ready to generate responses!")
-
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
+

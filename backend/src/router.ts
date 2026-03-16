@@ -10,6 +10,8 @@ import {
   updateSetting,
   getSetting,
   isDoNotReply,
+  addDoNotReply,
+  removeDoNotReply,
 } from './db';
 import { config } from './config';
 
@@ -34,6 +36,20 @@ function isRateLimited(jid: string): boolean {
   rateLimitMap.set(jid, timestamps);
   return false;
 }
+
+// Periodically prune stale entries from the rate limiter to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  const windowMs = config.rateLimitWindowMs;
+  for (const [jid, timestamps] of rateLimitMap) {
+    const active = timestamps.filter((t) => now - t < windowMs);
+    if (active.length === 0) {
+      rateLimitMap.delete(jid);
+    } else {
+      rateLimitMap.set(jid, active);
+    }
+  }
+}, 5 * 60 * 1000); // Every 5 minutes
 
 // ── Core message processing pipeline ────────────────────
 export async function processIncomingMessage(
@@ -62,9 +78,16 @@ export async function processIncomingMessage(
     return;
   }
 
-  // 4. Handle opt-out keyword
-  if (text.trim().toUpperCase() === 'STOP') {
+  // 4. Handle opt-out / opt-in keywords
+  const command = text.trim().toUpperCase();
+  if (command === 'STOP') {
+    addDoNotReply(jid);
     await sendWhatsApp(jid, '✅ Auto-replies disabled for you. Send START to re-enable.');
+    return;
+  }
+  if (command === 'START') {
+    removeDoNotReply(jid);
+    await sendWhatsApp(jid, '🔔 Auto-replies re-enabled! Welcome back.');
     return;
   }
 

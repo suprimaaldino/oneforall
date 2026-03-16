@@ -3,14 +3,27 @@ app.py — FastAPI tone classifier service for DinoBot.
 Provides POST /classify endpoint to analyze message tone/style.
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from model import load_classifier, classify
+
+
+# ── Lifespan ─────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load the classifier model when the service starts."""
+    print("[Classifier Service] 🚀 Starting up — loading classifier...")
+    load_classifier()
+    print("[Classifier Service] ✅ Ready to classify tones!")
+    yield
+
 
 app = FastAPI(
     title="DinoBot Tone Classifier",
     description="Classifies WhatsApp message tone (formal, casual, romantic, flirt, etc.)",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 
@@ -50,15 +63,7 @@ async def list_tones():
     return {"tones": TONE_LABELS}
 
 
-# ── Startup ──────────────────────────────────────────────
-@app.on_event("startup")
-async def startup_event():
-    """Load the classifier model when the service starts."""
-    print("[Classifier Service] 🚀 Starting up — loading classifier...")
-    load_classifier()
-    print("[Classifier Service] ✅ Ready to classify tones!")
-
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8002)
+

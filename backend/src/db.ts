@@ -9,7 +9,7 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const db = new Database(config.dbPath);
+const db: import('better-sqlite3').Database = new Database(config.dbPath);
 
 // Enable WAL mode for better concurrency
 db.pragma('journal_mode = WAL');
@@ -36,20 +36,33 @@ db.exec(`
     value TEXT NOT NULL
   );
 
-  -- Default settings
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('auto_reply_enabled', 'true');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('bot_name', '${config.botName}');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('default_tone', '${config.defaultTone}');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('safety_level', '${config.safetyLevel}');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('system_prompt', 'You are DinoBot, a friendly WhatsApp assistant.');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('temperature', '${config.llmTemperature}');
-
   CREATE TABLE IF NOT EXISTS do_not_reply (
     jid TEXT PRIMARY KEY,
     reason TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+// ── Default settings (parameterized — safe from SQL injection) ──
+const insertDefaultSetting = db.prepare(
+  `INSERT OR IGNORE INTO settings (key, value) VALUES (@key, @value)`
+);
+
+const defaultSettings: Array<{ key: string; value: string }> = [
+  { key: 'auto_reply_enabled', value: 'true' },
+  { key: 'bot_name', value: config.botName },
+  { key: 'default_tone', value: config.defaultTone },
+  { key: 'safety_level', value: config.safetyLevel },
+  { key: 'system_prompt', value: `You are ${config.botName}, a friendly WhatsApp assistant.` },
+  { key: 'temperature', value: String(config.llmTemperature) },
+];
+
+const insertDefaults = db.transaction(() => {
+  for (const setting of defaultSettings) {
+    insertDefaultSetting.run(setting);
+  }
+});
+insertDefaults();
 
 // ── Prepared statements ─────────────────────────────────
 const insertMessage = db.prepare(`
@@ -77,6 +90,10 @@ const upsertSettingStmt = db.prepare(`
 `);
 
 const isDNRStmt = db.prepare(`SELECT 1 FROM do_not_reply WHERE jid = @jid`);
+const addDNRStmt = db.prepare(
+  `INSERT OR IGNORE INTO do_not_reply (jid, reason) VALUES (@jid, @reason)`
+);
+const removeDNRStmt = db.prepare(`DELETE FROM do_not_reply WHERE jid = @jid`);
 
 // ── Exported functions ──────────────────────────────────
 export interface MessageRecord {
@@ -129,6 +146,14 @@ export function updateSetting(key: string, value: string): void {
 
 export function isDoNotReply(jid: string): boolean {
   return !!isDNRStmt.get({ jid });
+}
+
+export function addDoNotReply(jid: string, reason = 'User sent STOP'): void {
+  addDNRStmt.run({ jid, reason });
+}
+
+export function removeDoNotReply(jid: string): void {
+  removeDNRStmt.run({ jid });
 }
 
 export { db };
